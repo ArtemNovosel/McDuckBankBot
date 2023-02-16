@@ -1,41 +1,44 @@
-import requests
 import telebot
-import json
-
-TOKEN = "5883210639:AAF7SNGvpxJSZgTUZ8fcNNLeHMpHC6gT9E4"
+from config import TOKEN, keys
+from extensions import APIException, CryptoConverter
 
 bot = telebot.TeleBot(TOKEN)
 
-keys = {
-    'биткойн': 'BTC',
-    'эфириум': 'ETH',
-    'доллар': 'USD',
-    'евро':'',
-    'рубль':'',
-    'юань':'',
 
-}
-
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['start',
+                               'help'])  # При вводе команды /start или /help пользователю выводятся инструкции по применению бота
 def help(message: telebot.types.Message):
     text = 'Для конвертации валюты введите команду боту в формате: \n <имя валюты> <в какую валюту перевести> <колличество переводимой валюты> ' \
            '\n Список доступных валют: /values '
     bot.reply_to(message, text)
 
-@bot.message_handler(commands=['values'])
+
+@bot.message_handler(commands=[
+    'values'])  # При вводе команды /values должна выводиться информация о всех доступных валютах в читаемом виде
 def values(message: telebot.types.Message):
     text = 'Доступные валюты:'
     for key in keys.keys():
         text = '\n'.join((text, key))
     bot.reply_to(message, text)
 
-@bot.message_handler(content_types=['text',])
+
+@bot.message_handler(content_types=['text', ])
 def convert(message: telebot.types.Message):
-    quote, base, amount = message.text.split(' ')
-    r = requests.get(f'https://min-api.cryptocompare.com/data/price?fsym={keys[quote]}&tsyms={keys[base]}')
-    total_base = json.loads(r.content)[keys[base]]
-    text = f'{amount} {base} в {quote} - {total_base}'
-    bot.send_message(message.chat.id, text)
+    try:
+        values = message.text.split(' ')   #преобразуем сообщение в список
+        if len(values) != 3:    #если список != 3 элементам
+            raise APIException('Некорректный ввод')
+
+        quote, base, amount = values    # присваиваем переменные каждому элементу списка
+        total_base = CryptoConverter.convert(quote.lower(), base.lower(), amount)  #вызываем метод convert класса CryptoConverter
+    except APIException as e:   # ловим ошибки пользователя
+        bot.reply_to(message, f'Ошибка пользователя. \n{e}')
+    except Exception as e:       # Ловим ошибки сервера
+        bot.reply_to(message, f'Не удалось обработать команду\n{e}')
+    else:
+        # print(amount)
+        text = f'Цена {amount} {quote} в {base} - {round(total_base * float(amount), 2)}'  # считаем сумму и округляем до 4го знака после запятой
+        bot.send_message(message.chat.id, text)  # передаем сообщение с суммой сконвертируемой валюты
 
 
 bot.polling()
