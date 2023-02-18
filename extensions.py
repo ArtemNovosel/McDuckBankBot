@@ -23,6 +23,7 @@ class CryptoConverter:
             amount = float(amount) #если сумма не число
         except ValueError:
             raise APIException(f'Не удалось обработать колличество {amount}')
-        r = requests.get(f'https://min-api.cryptocompare.com/data/price?fsym={quote_ticker}&tsyms={base_ticker}')
-        total_base = json.loads(r.content)[keys[base]]
-        return total_base
+        r = requests.get(f'https://min-api.cryptocompare.com/data/price?fsym={quote_ticker}&tsyms={base_ticker}') #отправляем запрос
+        total_base = json.loads(r.content)[keys[base]]  #ответ кладем в переменную
+        # print(round(total_base * float(amount), 2))
+        return round(total_base * float(amount), 2)  #возаращаем сумму

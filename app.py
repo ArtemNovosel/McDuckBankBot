@@ -37,8 +37,8 @@ def convert(message: telebot.types.Message):
     except Exception as e:  # Ловим ошибки сервера
         bot.reply_to(message, f'Не удалось обработать команду\n{e}')
     else:
-        # print(amount)
-        text = f'За {amount} {quote} вы получите \n {round(total_base * float(amount), 2)} {base}'  # считаем сумму и округляем до 4го знака после запятой
+        # print(total_base)
+        text = f'За {amount} {quote} вы получите \n {total_base} {base}'  # считаем сумму и округляем до 4го знака после запятой
         bot.send_message(message.chat.id, text)  # передаем сообщение с суммой сконвертируемой валюты
 
 
